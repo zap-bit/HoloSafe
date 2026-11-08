@@ -1,0 +1,24 @@
+# Render Blueprint for the HoloSafe backend (FastAPI + WebSockets + SQLite, one long-running process).
+# The frontend is hosted on Vercel (see frontend/vercel.json).
+services:
+  - type: web
+    name: holosafe-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.9
+      - key: NEMOTRON_API_KEY
+        sync: false          # Render asks for this value when you create the Blueprint
+      - key: NEMOTRON_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NEMOTRON_MODEL
+        value: nvidia/nemotron-3.5-super-vl-120b-a12b
+      - key: AGENT_MODE
+        value: live
+      - key: AGENT_TIMEOUT
+        value: "20"

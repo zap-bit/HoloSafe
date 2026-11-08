@@ -17,7 +17,9 @@ export function startLink() {
   let retry = 0
   const open = () => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${proto}://${location.host}/ws`)
+    // Hosted: VITE_WS_URL points straight at the backend (e.g. wss://holosafe-api.onrender.com/ws),
+    // because Vercel rewrites can't proxy WebSockets. Local dev: same host, proxied by Vite.
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL || `${proto}://${location.host}/ws`)
     ws.onopen = () => { retry = 0; useStore.getState().setLink('live') }
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data)
