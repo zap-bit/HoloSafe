@@ -6,6 +6,7 @@ import TriageQueue from '../components/TriageQueue'
 import Approvals from '../components/Approvals'
 import AgentLog from '../components/AgentLog'
 import IncidentHistory from '../components/IncidentHistory'
+import { LinkBanner, MeshButton, OfflineToggle, SyncOverlay } from '../components/Offline'
 
 export default function CommandCenter() {
   const snap = useStore((s) => s.snap)
@@ -14,12 +15,15 @@ export default function CommandCenter() {
       <div className="sweep" />
       <Header>
         <ScenarioControls />
+        <OfflineToggle />
+        <MeshButton />
       </Header>
       <main className="relative flex min-h-0 flex-1">
         <aside className="z-10 flex w-[350px] shrink-0 flex-col gap-2 p-2"><TriageQueue /><IncidentHistory /></aside>
-        <section className="relative min-w-0 flex-1"><ScenePane /></section>
+        <section className="relative min-w-0 flex-1"><ScenePane /><LinkBanner /></section>
         <aside className="z-10 flex w-[390px] shrink-0 flex-col gap-2 p-2"><Approvals /><AgentLog /></aside>
       </main>
+      <SyncOverlay />
       {!snap && <div className="absolute inset-0 grid place-items-center font-mono text-cyan/50">ESTABLISHING LINK…</div>}
     </div>
   )

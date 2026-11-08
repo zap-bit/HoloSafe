@@ -7,7 +7,7 @@ load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
-from . import agents, db, orchestrator, scenario, state  # noqa: E402
+from . import agents, db, orchestrator, scenario, state, tools  # noqa: E402
 
 app = FastAPI(title="HoloSafe")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -87,6 +87,9 @@ async def set_offline(o: OfflineIn):
     db.set_meta("offline", o.offline)
     agents.refresh_mode_badge()
     flushed = 0
+    if o.offline and db.get_meta("scenario"):
+        tools.notify("Internet down. HoloSafe is on local mesh: keep following your last route; reports will relay phone-to-phone.")
+        agents.log_event("Comms Agent", "LINK LOST", "Switched to mesh mode: agents on local MOCK, outgoing messages queued for delivery.")
     if not o.offline:
         flushed = db.q1("SELECT COUNT(*) n FROM messages WHERE status='queued'")["n"]
         db.ex("UPDATE messages SET status='sent' WHERE status='queued'")

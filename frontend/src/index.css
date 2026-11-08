@@ -45,12 +45,13 @@ body { margin: 0; background: var(--color-void); color: #cfe9f5; font-family: va
   font-family: var(--font-display); font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
   color: var(--color-cyan); text-shadow: 0 0 8px rgba(25,230,255,0.7);
 }
-.chip { font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border: 1px solid currentColor; letter-spacing: 0.08em; text-transform: uppercase; }
+.chip { white-space: nowrap; font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border: 1px solid currentColor; letter-spacing: 0.08em; text-transform: uppercase; }
 .btn {
   font-family: var(--font-display); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
   padding: 7px 12px; border: 1px solid rgba(25,230,255,0.5); color: #bff6ff; background: rgba(25,230,255,0.06);
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); transition: all .15s;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); transition: all .15s; white-space: nowrap;
 }
+header .btn { padding: 6px 10px; letter-spacing: .14em; font-size: 9px; }
 .btn:hover:not(:disabled) { background: rgba(25,230,255,0.2); box-shadow: 0 0 16px rgba(25,230,255,0.45); color: #fff; }
 .btn:disabled { opacity: .35; cursor: not-allowed; }
 .btn-red { border-color: rgba(255,42,77,.7); color: #ffc2cc; background: rgba(255,42,77,.1); }

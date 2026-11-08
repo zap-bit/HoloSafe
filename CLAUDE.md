@@ -10,7 +10,7 @@
 - [x] M3 Nemotron agents — 5 tool-calling agents + orchestrator, tools w/ JSON schemas, Agent Activity panel, approvals queue, MOCK fallback + badge, triage ranking
 - [x] M4 Civilian reporting loop — /report phone form → Report Agent → reported_blocked → Comms re-route → approval to verify; incident history; 0.0.0.0 + LAN URL
 - [x] M5 Simulation Agent — cascade_forecast (earthquake + cyberattack), precautions, approvals, predicted volumes, Now/+1h/+6h/+24h slider, scenario switcher
-- [ ] M6 Offline mode — toggle, mock agents, IndexedDB cache, queued reports, BroadcastChannel mesh device, sync animation, connectivity indicator
+- [x] M6 Offline mode — toggle, mock agents, IndexedDB cache, queued reports, BroadcastChannel mesh device, sync animation, connectivity indicator
 - [ ] M7 Polish — splash with logo glitch, Demo walkthrough button, zero console errors, Reset restores, README + mermaid
 
 ---

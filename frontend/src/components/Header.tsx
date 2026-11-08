@@ -14,13 +14,13 @@ export default function Header({ children }: { children?: React.ReactNode }) {
       <Logo className="h-10 w-10 drop-shadow-[0_0_10px_#ff8a1f]" />
       <div className="leading-none">
         <div className="flicker font-display text-xl font-black tracking-[0.35em] text-white [text-shadow:0_0_12px_#19e6ff]">HOLOSAFE</div>
-        <div className="mt-1 font-mono text-[10px] tracking-[0.3em] text-cyan/70">SEE · UNDERSTAND · EVACUATE · COORDINATE</div>
+        <div className="mt-1 hidden font-mono text-[9px] tracking-[0.25em] text-cyan/70 2xl:block">SEE · UNDERSTAND · EVACUATE · COORDINATE</div>
       </div>
-      <div className="ml-4 flex items-center gap-2 font-mono text-[11px]">
+      <div className="ml-2 flex min-w-0 items-center gap-1.5 font-mono text-[11px]">
         <span className="chip" style={{ color: netColor }}><span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: netColor }} />{netLabel}</span>
         {mode && (
           <span className="chip" style={{ color: mode.mode === 'mock' ? '#ffb020' : '#00ffa3' }} title={mode.reason}>
-            {mode.mode === 'mock' ? `MOCK · ${mode.reason}` : 'NEMOTRON LIVE'}
+            {mode.mode === 'mock' ? `MOCK · ${mode.reason.replace('AGENT_MODE=mock', 'config')}` : 'NEMOTRON LIVE'}
           </span>
         )}
         {snap?.scenario && <span className="chip pulse-red text-red">⚠ {snap.scenario.name}</span>}

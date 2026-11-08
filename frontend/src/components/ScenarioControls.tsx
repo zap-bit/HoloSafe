@@ -14,11 +14,11 @@ export default function ScenarioControls() {
         {hazards.map((h) => (
           <button key={h.id} title={h.description}
             className={`btn !px-3 ${hazard === h.id ? '!border-amber !bg-amber/20 !text-white' : '!text-dim'}`}
-            onClick={() => setHazard(h.id)}>{h.id === 'earthquake' ? '◬ ' : '⌁ '}{h.id}</button>
+            onClick={() => setHazard(h.id)}>{h.id === 'earthquake' ? '◬ quake' : h.id === 'cyberattack' ? '⌁ cyber' : h.id}</button>
         ))}
       </div>
       <button className="btn btn-red" disabled={pending || snap?.busy} onClick={() => go(() => api.post('/api/scenario/trigger', { hazard }))}>
-        ▶ Trigger scenario
+        ▶ Trigger
       </button>
       <button className="btn" disabled={pending} onClick={() => go(() => api.post('/api/scenario/reset'))}>↺ Reset</button>
     </div>

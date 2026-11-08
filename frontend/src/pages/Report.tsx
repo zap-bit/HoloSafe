@@ -3,6 +3,7 @@ import { useStore } from '../lib/store'
 import { submitReport, useOutbox, deviceId } from '../lib/outbox'
 import Logo from '../components/Logo'
 import { SEVERITY } from '../lib/colors'
+import { SyncOverlay } from '../components/Offline'
 
 type Cat = 'blocked_route' | 'hazard' | 'distress'
 const CATS: { id: Cat; label: string; icon: string; color: string; quick: string[] }[] = [
@@ -129,5 +130,5 @@ export default function ReportPage({ embedded = false, device }: { embedded?: bo
     </div>
   )
   if (embedded) return body
-  return <div className="scanlines h-full overflow-y-auto bg-[radial-gradient(ellipse_at_top,#0a1e2e,#04060b_70%)]">{body}</div>
+  return <div className="scanlines h-full overflow-y-auto bg-[radial-gradient(ellipse_at_top,#0a1e2e,#04060b_70%)]">{body}<SyncOverlay /></div>
 }
