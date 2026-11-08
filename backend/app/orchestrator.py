@@ -54,8 +54,10 @@ async def _run_scenario(cfg: dict, epoch: int) -> None:
             for rep in cfg.get("reports", []):
                 if epoch != _epoch:
                     return
-                _store_report(rep, device="scenario-feed")
-                await agents.report_agent(rep)
+                rid = _store_report(rep, device="scenario-feed", status="processing")
+                state.broadcast()
+                res = await agents.report_agent(rep)
+                db.update("reports", rid, status="processed", incident_id=(res.get("incident") or {}).get("incident_id"))
                 await asyncio.sleep(0.6)
             await _after_reports("scenario start", initial=True, epoch=epoch)
             if epoch == _epoch:
@@ -78,20 +80,28 @@ async def _simulate(trigger: str) -> None:
         await sim(trigger)
 
 
-def _store_report(rep: dict, device: str, status: str = "processed") -> str:
-    rid = tools._id("REP")
+def _store_report(rep: dict, device: str, status: str = "processed", rid: str | None = None) -> str:
+    rid = rid or tools._id("REP")
     db.insert("reports", dict(id=rid, kind=rep.get("kind") or "auto", text=rep["text"], node_id=rep["node_id"],
                               source=rep.get("source", "civilian"), device=device, status=status, incident_id=None,
                               created_at=tools.now()))
     return rid
 
 
-async def handle_report(rep: dict, device: str = "phone") -> dict:
-    """Civilian report from /report (or synced from the offline queue)."""
-    rid = _store_report(rep, device=device, status="processing")
+def submit_report(rep: dict, device: str = "phone", rid: str | None = None) -> dict:
+    """Accept a civilian report (from /report or the offline sync). Returns immediately; agents run in background."""
+    if rid and db.q1("SELECT id FROM reports WHERE id=?", (rid,)):
+        return {"ok": True, "report_id": rid, "duplicate": True}
+    rid = _store_report(rep, device=device, status="processing", rid=rid)
     state.broadcast()
-    epoch = _epoch
+    _spawn(_process_report(rep, rid, _epoch))
+    return {"ok": True, "report_id": rid}
+
+
+async def _process_report(rep: dict, rid: str, epoch: int) -> None:
     async with _lock:
+        if epoch != _epoch:
+            return
         _busy(True)
         try:
             res = await agents.report_agent(rep)
@@ -99,11 +109,10 @@ async def handle_report(rep: dict, device: str = "phone") -> dict:
             db.update("reports", rid, status="processed", incident_id=inc)
             trig = f"new report {rid}"
             await _after_reports(trig, epoch=epoch)
-            if rep.get("kind") == "hazard" or "gas" in rep["text"].lower() or "fire" in rep["text"].lower():
+            if rep.get("kind") == "hazard" or any(w in rep["text"].lower() for w in ("gas", "fire", "smoke")):
                 await _simulate(trig)
         finally:
             _busy(False)
-    return {"ok": True, "report_id": rid, "incident_id": inc}
 
 
 # ------------------------------------------------------------------ approvals

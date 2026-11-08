@@ -8,7 +8,7 @@
 - [x] M1 3D city + hologram — 4 buildings, streets, 2 safe zones, glowing scene, isolate building/floors, people markers, edge colors; /holo 4x Pepper's Ghost cross, calibration keys; cyberpunk shell
 - [x] M2 Data model + scenarios + routing — full SQLite model + seed, hazards/*.json, Trigger/Reset, earthquake effects, networkx route(), animated routes
 - [x] M3 Nemotron agents — 5 tool-calling agents + orchestrator, tools w/ JSON schemas, Agent Activity panel, approvals queue, MOCK fallback + badge, triage ranking
-- [ ] M4 Civilian reporting loop — /report phone form → Report Agent → reported_blocked → Comms re-route → approval to verify; incident history; 0.0.0.0 + LAN URL
+- [x] M4 Civilian reporting loop — /report phone form → Report Agent → reported_blocked → Comms re-route → approval to verify; incident history; 0.0.0.0 + LAN URL
 - [ ] M5 Simulation Agent — cascade_forecast (earthquake + cyberattack), precautions, approvals, predicted volumes, Now/+1h/+6h/+24h slider, scenario switcher
 - [ ] M6 Offline mode — toggle, mock agents, IndexedDB cache, queued reports, BroadcastChannel mesh device, sync animation, connectivity indicator
 - [ ] M7 Polish — splash with logo glitch, Demo walkthrough button, zero console errors, Reset restores, README + mermaid

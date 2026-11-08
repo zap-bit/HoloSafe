@@ -54,6 +54,7 @@ async def trigger(t: TriggerIn):
 
 
 class ReportIn(BaseModel):
+    id: str | None = None            # client id → idempotent offline sync
     text: str
     node_id: str
     kind: str | None = None          # blocked_route | hazard | distress (form category = hint)
@@ -66,8 +67,8 @@ class ReportIn(BaseModel):
 async def report(r: ReportIn):
     if not db.q1("SELECT id FROM nodes WHERE id=?", (r.node_id,)):
         raise HTTPException(400, "unknown node")
-    rep = r.model_dump(exclude={"device"})
-    return await orchestrator.handle_report(rep, device=r.device)
+    rep = r.model_dump(exclude={"device", "id"})
+    return orchestrator.submit_report(rep, device=r.device, rid=r.id)
 
 
 @app.post("/api/approvals/{aid}/{decision}")

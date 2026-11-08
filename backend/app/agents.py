@@ -260,8 +260,21 @@ def _flag_vulnerable(run: Run) -> None:
             run.tool("create_incident", node_id=p["node_id"], severity="urgent" if (p["floor"] or 1) >= 3 else "requested",
                      kind="assisted_evac", description=f"{p['name']}: needs assisted evacuation from floor {p['floor']}",
                      source="third_party", confidence=0.9, person_id=p["id"])
+    # civilian-reported blockages: propose promotion to VERIFIED (human decides)
+    decided = {json.loads(a["payload_json"]).get("edge_id") for a in db.q("SELECT payload_json FROM approvals WHERE action='verify_blocked'")}
+    for e in db.q("SELECT * FROM edges WHERE status='reported_blocked'"):
+        if e["id"] in decided:
+            continue
+        run.tool("propose_action", action="verify_blocked", title=f"Verify blocked: {tools.place(e['a'])} ↔ {tools.place(e['b']).split(' · ')[-1]}",
+                 payload={"edge_id": e["id"]},
+                 rationale=f"Reported by {e['status_source']} (conf {e['status_confidence']}). Civilians already routed around it; "
+                           "verifying also removes it from responder access routes.")
     if cfg.get("shelters_unverified"):
+        asked = {json.loads(a["payload_json"]).get("resource_id") for a in db.q(
+            "SELECT payload_json FROM approvals WHERE action='declare_safe' AND status='pending'")}
         for r in db.q("SELECT * FROM resources WHERE kind='shelter' AND status='unverified'"):
+            if r["id"] in asked:
+                continue
             run.tool("propose_action", action="declare_safe", title=f"Declare {r['name']} safe",
                      payload={"resource_id": r["id"], "node_id": r["node_id"]},
                      rationale="Shelter outside damage footprint; drone pass shows no structural hazards. Until approved it stays UNVERIFIED.")
