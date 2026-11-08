@@ -1,0 +1,48 @@
+{
+  "id": "cyberattack",
+  "name": "GRID CYBERATTACK",
+  "icon": "cyber",
+  "description": "Ransomware on VoltNet SCADA takes down the Eastside Substation; spreads along dependencies, not geography.",
+  "epicenter": null,
+  "initial_failures": ["SUB-B"],
+  "attack_vector": { "vendor": "VoltNet SCADA", "network": "GRID-OT" },
+  "evacuate": ["B4"],
+  "shelters_unverified": false,
+  "effects": {
+    "edges": [
+      { "a": "B4-F1-C2", "b": "B4-E1", "status": "verified_blocked", "source": "beacon", "confidence": 0.9, "note": "access-control maglocks failed closed" },
+      { "a": "ST-EC-M", "b": "ST-E-M", "status": "unknown", "source": "third_party", "confidence": 0.4, "note": "signals dark — intersection uncontrolled" },
+      { "a": "ST-C-M", "b": "ST-EC-M", "status": "unknown", "source": "third_party", "confidence": 0.4, "note": "signals dark — intersection uncontrolled" }
+    ],
+    "infra": [ { "id": "SUB-B", "status": "compromised" } ],
+    "people": [ { "id": "P22", "status": "trapped" } ]
+  },
+  "reports": [
+    { "text": "Locked inside Nova Data Center, doors won't open and the server alarms are going off", "node_id": "B4-F1-R2", "source": "civilian", "confidence": 0.75, "person_id": "P22" },
+    { "text": "Traffic lights dark at Main & East, cars everywhere, near miss with a cyclist", "node_id": "ST-EC-M", "source": "civilian", "confidence": 0.6 },
+    { "text": "Phone shows SOS only, can't get through to 911", "node_id": "ST-C-M", "source": "civilian", "confidence": 0.5 },
+    { "text": "Civic Hospital switched to generator power, 8h of fuel on site", "node_id": "B3-F1-C1", "source": "third_party", "confidence": 0.95 }
+  ],
+  "triage": {
+    "severity_weight": { "critical": 100, "urgent": 60, "requested": 25, "disconnected": 15, "resolved": 0 },
+    "isolation_weight": 30,
+    "vulnerability_weight": 20,
+    "time_weight": 15,
+    "accessibility_weight": 15,
+    "confidence_floor": 0.55,
+    "isolation_radius": 12
+  },
+  "cascade": {
+    "infra_base_confidence": 0.9,
+    "hop_decay": 0.85,
+    "same_vendor_confidence": 0.55,
+    "same_vendor_horizon": 6
+  },
+  "precautions": {
+    "power_loss": { "text": "Dispatch generator fuel to {target} before backup runs out", "deadline_h": null, "operational": true, "action": "fuel_resupply", "averts_target": true },
+    "comms_loss": { "text": "Pre-position mesh repeaters near {target}; push 'save battery' alert to residents", "deadline_h": null, "operational": false },
+    "water_loss": { "text": "Stage water tankers for Civic Hospital; notify ER of pressure drop", "deadline_h": null, "operational": false },
+    "traffic_loss": { "text": "Deploy manual traffic control at {target}; keep Central Ave clear for responders", "deadline_h": null, "operational": false },
+    "compromise": { "text": "Isolate {target} from the {vector} network and switch to manual control", "deadline_h": null, "operational": true, "action": "isolate_network", "averts_chain": true }
+  }
+}

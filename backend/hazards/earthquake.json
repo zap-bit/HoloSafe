@@ -1,0 +1,55 @@
+{
+  "id": "earthquake",
+  "name": "M6.8 EARTHQUAKE",
+  "icon": "quake",
+  "description": "Shallow M6.8 quake, epicentre 1.2 km west of Meridian Tower.",
+  "epicenter": { "x": -34, "z": -24 },
+  "evacuate": "all",
+  "shelters_unverified": true,
+  "effects": {
+    "edges": [
+      { "a": "B1-F3-R5", "b": "B1-F3-C3", "status": "verified_blocked", "source": "beacon", "confidence": 0.9, "note": "door frame collapsed (structural sensor)" },
+      { "a": "B1-F3-C3", "b": "B1-F3-C4", "status": "verified_blocked", "source": "beacon", "confidence": 0.85, "note": "corridor ceiling down" },
+      { "a": "B2-F1-S1", "b": "B2-F2-S1", "status": "unknown", "source": "beacon", "confidence": 0.3, "note": "stair sensor offline" },
+      { "a": "ST-WC-M", "b": "ST-C-M", "status": "verified_blocked", "source": "third_party", "confidence": 0.95, "note": "facade collapse across Main St (traffic cam)" },
+      { "a": "ST-W-S", "b": "ST-W-SM", "status": "unknown", "source": "third_party", "confidence": 0.3, "note": "camera feed lost" }
+    ],
+    "infra": [ { "id": "SUB-A", "status": "failed" }, { "id": "GAS-1", "status": "damaged" } ],
+    "people": [ { "id": "P08", "status": "trapped" }, { "id": "P17", "status": "injured" } ]
+  },
+  "reports": [
+    { "text": "HELP!! ceiling came down in room 305, Grace is pinned under a desk and can't move her legs", "node_id": "B1-F3-R6", "source": "civilian", "confidence": 0.8 },
+    { "text": "Glass everywhere in the Meridian lobby, a few people have small cuts", "node_id": "B1-F1-C2", "source": "civilian", "confidence": 0.7 },
+    { "text": "Lobby windows blew out, minor cuts, we're mostly ok", "node_id": "B1-F1-C3", "source": "civilian", "confidence": 0.7 },
+    { "text": "people with small cuts in the lobby, need first aid kit", "node_id": "B1-F1-C2", "source": "civilian", "confidence": 0.6 },
+    { "text": "Meridian lobby — lots of broken glass, minor injuries", "node_id": "B1-F1-R2", "source": "civilian", "confidence": 0.7 },
+    { "text": "WEARABLE FALL ALERT: hard impact detected, no movement for 4 min, heart rate 128", "node_id": "B2-F2-R3", "source": "beacon", "confidence": 0.6, "person_id": "P17" },
+    { "text": "Strong smell of gas on Main St by the Meridian, hissing from a manhole", "node_id": "ST-WC-M", "source": "civilian", "confidence": 0.55 }
+  ],
+  "triage": {
+    "severity_weight": { "critical": 100, "urgent": 60, "requested": 25, "disconnected": 15, "resolved": 0 },
+    "isolation_weight": 30,
+    "vulnerability_weight": 20,
+    "time_weight": 15,
+    "accessibility_weight": 15,
+    "confidence_floor": 0.55,
+    "isolation_radius": 12
+  },
+  "cascade": {
+    "aftershock": { "radius_m": 34, "p0": 0.55, "tau_h": 7, "radius_decay": 0.82 },
+    "weakened_radius_m": 30,
+    "fire": { "source_infra": "GAS-1", "ignition_confidence": 0.5, "spread_hops": { "1": 0, "6": 1, "24": 2 }, "hop_decay": 0.7 },
+    "infra_base_confidence": 0.9,
+    "hop_decay": 0.85
+  },
+  "precautions": {
+    "aftershock": { "text": "Keep search teams out of the ring between sweeps; stage Engine 7 outside the zone", "deadline_h": 1, "operational": false },
+    "weakened_building": { "text": "Restrict re-entry to {target} after evacuation; structural check before rescue teams go above floor 2", "deadline_h": 6, "operational": true, "action": "restrict_entry" },
+    "fire": { "text": "Shut the Main St gas main valve (GAS-1) and stage a fire unit at Main & West", "deadline_h": 1, "operational": true, "action": "shut_gas_valve", "averts_kind": "fire" },
+    "power_loss": { "text": "Dispatch generator fuel to {target} before backup runs out", "deadline_h": null, "operational": true, "action": "fuel_resupply", "averts_target": true },
+    "comms_loss": { "text": "Pre-position mesh repeaters near {target}; push 'save battery' alert to residents", "deadline_h": null, "operational": false },
+    "water_loss": { "text": "Stage water tankers for Civic Hospital and fire units; notify ER of pressure drop", "deadline_h": null, "operational": false },
+    "traffic_loss": { "text": "Deploy manual traffic control at {target}; keep Central Ave clear for responders", "deadline_h": null, "operational": false },
+    "compromise": { "text": "Isolate {target} from the {vector} network and switch to manual control", "deadline_h": null, "operational": true, "action": "isolate_network", "averts_chain": true }
+  }
+}

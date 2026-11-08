@@ -1,7 +1,7 @@
 import Header from '../components/Header'
 import ScenePane from '../components/ScenePane'
 import { useStore } from '../lib/store'
-import { api } from '../lib/api'
+import ScenarioControls from '../components/ScenarioControls'
 
 export default function CommandCenter() {
   const snap = useStore((s) => s.snap)
@@ -9,7 +9,7 @@ export default function CommandCenter() {
     <div className="scanlines vignette flex h-full flex-col overflow-hidden">
       <div className="sweep" />
       <Header>
-        <button className="btn" onClick={() => api.post('/api/scenario/reset')}>Reset scenario</button>
+        <ScenarioControls />
       </Header>
       <main className="relative flex min-h-0 flex-1">
         <aside className="z-10 flex w-[340px] shrink-0 flex-col gap-2 p-2" />

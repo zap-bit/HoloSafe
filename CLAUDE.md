@@ -6,7 +6,7 @@
 ## Milestone task list (keep updated)
 - [x] M0 Scaffold — Vite React TS + Tailwind + R3F + drei + zustand + router (/, /holo, /report); FastAPI + SQLite + /health + /ws snapshot; one root command; .env.example
 - [x] M1 3D city + hologram — 4 buildings, streets, 2 safe zones, glowing scene, isolate building/floors, people markers, edge colors; /holo 4x Pepper's Ghost cross, calibration keys; cyberpunk shell
-- [ ] M2 Data model + scenarios + routing — full SQLite model + seed, hazards/*.json, Trigger/Reset, earthquake effects, networkx route(), animated routes
+- [x] M2 Data model + scenarios + routing — full SQLite model + seed, hazards/*.json, Trigger/Reset, earthquake effects, networkx route(), animated routes
 - [ ] M3 Nemotron agents — 5 tool-calling agents + orchestrator, tools w/ JSON schemas, Agent Activity panel, approvals queue, MOCK fallback + badge, triage ranking
 - [ ] M4 Civilian reporting loop — /report phone form → Report Agent → reported_blocked → Comms re-route → approval to verify; incident history; 0.0.0.0 + LAN URL
 - [ ] M5 Simulation Agent — cascade_forecast (earthquake + cyberattack), precautions, approvals, predicted volumes, Now/+1h/+6h/+24h slider, scenario switcher
