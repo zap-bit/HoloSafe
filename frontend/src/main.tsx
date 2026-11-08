@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
@@ -10,13 +9,12 @@ import { startLink } from './lib/ws'
 startLink()
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
+  <BrowserRouter>
       <Routes>
         <Route path="/" element={<CommandCenter />} />
         <Route path="/holo" element={<Holo />} />
         <Route path="/report" element={<ReportPage />} />
       </Routes>
-    </BrowserRouter>
-  </StrictMode>,
+  </BrowserRouter>
+,
 )

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- PLACEHOLDER: replace with the fire-dragon/drone illustration (logo.png/.webp/.jpg also picked up) -->
+  <defs>
+    <linearGradient id="f" x1="0" y1="1" x2="0.4" y2="0"><stop offset="0" stop-color="#ff2a4d"/><stop offset=".55" stop-color="#ff8a1f"/><stop offset="1" stop-color="#ffe14d"/></linearGradient>
+    <filter id="g"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g filter="url(#g)" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <polygon points="100,12 176,56 176,144 100,188 24,144 24,56" stroke="#19e6ff" stroke-width="3" opacity=".9"/>
+    <!-- drone body + rotors -->
+    <circle cx="58" cy="62" r="13" stroke="#19e6ff" stroke-width="2.5"/><circle cx="142" cy="62" r="13" stroke="#19e6ff" stroke-width="2.5"/>
+    <path d="M70 68 L88 84 M130 68 L112 84" stroke="#19e6ff" stroke-width="3"/>
+    <!-- dragon head / flame -->
+    <path d="M100 52 C122 70 128 92 118 116 C140 106 146 128 132 150 C122 166 104 170 100 170 C96 170 78 166 68 150 C54 128 60 106 82 116 C72 92 78 70 100 52 Z" stroke="url(#f)" stroke-width="4" fill="url(#f)" fill-opacity=".18"/>
+    <path d="M88 104 L96 112 M112 104 L104 112" stroke="#ffe14d" stroke-width="3.5"/>
+    <path d="M90 138 Q100 150 110 138" stroke="#ff3df0" stroke-width="3"/>
+  </g>
+</svg>
