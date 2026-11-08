@@ -19,7 +19,7 @@ def _cfg():
     return {
         "key": os.getenv("NEMOTRON_API_KEY", "").strip(),
         "base": os.getenv("NEMOTRON_BASE_URL", "https://integrate.api.nvidia.com/v1").strip(),
-        "model": os.getenv("NEMOTRON_MODEL", "nvidia/llama-3.3-nemotron-super-49b-v1").strip(),
+        "model": os.getenv("NEMOTRON_MODEL", "nvidia/nemotron-3.5-super-vl-120b-a12b").strip(),
         "mode": os.getenv("AGENT_MODE", "live").strip().lower(),
         "timeout": float(os.getenv("AGENT_TIMEOUT", "20")),
     }

@@ -84,3 +84,17 @@ header .btn { padding: 6px 10px; letter-spacing: .14em; font-size: 9px; }
 }
 .glitch { animation: glitch 1.1s steps(2, end) 2; }
 @keyframes syncfly { from { transform: translate(0,0) scale(1); opacity: 1 } to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0 } }
+
+/* ---------- Command Center backdrop: let the city image show through (scoped to "/" only) ----------
+   Unlayered so it wins over the .panel component style and the header's Tailwind gradient. */
+.cc-bg .panel {
+  background: linear-gradient(160deg, rgba(10,22,36,0.62), rgba(5,10,18,0.55));
+  backdrop-filter: blur(3px);
+}
+.cc-bg > header {
+  background: linear-gradient(to right, rgba(6,20,32,0.68), rgba(4,6,11,0.52), rgba(18,6,26,0.68));
+  backdrop-filter: blur(4px);
+}
+.cc-bg.vignette::before {
+  background: radial-gradient(ellipse at center, transparent 65%, rgba(0,0,0,0.35) 100%);
+}

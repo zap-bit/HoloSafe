@@ -13,7 +13,12 @@ import { LinkBanner, MeshButton, OfflineToggle, SyncOverlay } from '../component
 export default function CommandCenter() {
   const snap = useStore((s) => s.snap)
   return (
-    <div className="scanlines vignette flex h-full flex-col overflow-hidden">
+    <div className="cc-bg scanlines vignette flex h-full flex-col overflow-hidden"
+      style={{
+        // Command Center only: city backdrop behind the panels, lightly tinted (see .cc-bg in index.css
+        // for the matching lighter panels/header). The 3D scene canvas stays opaque, and /holo is unaffected.
+        background: "linear-gradient(rgba(2,5,10,0.15), rgba(2,5,10,0.3)), url('/command-bg.webp') center / cover no-repeat, #02050a",
+      }}>
       <div className="sweep" />
       <Header>
         <Demo />

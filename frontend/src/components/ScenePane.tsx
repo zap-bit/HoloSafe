@@ -17,7 +17,7 @@ export default function ScenePane() {
   const labels = useMemo(() => sceneLabels(snap), [snap])
   return (
     <div className="absolute inset-0">
-      <Canvas camera={{ position: [-20, 85, 105], fov: 42, near: 1, far: 2000 }} dpr={[1, 2]} gl={{ antialias: true }}
+      <Canvas camera={{ position: [-20, 85, 105], fov: 42, near: 1, far: 2000 }} dpr={[1, 2]} gl={{ antialias: true }} style={{ opacity: 0.9 }}
         onPointerMissed={() => {}}>
         <color attach="background" args={['#02050a']} />
         <fog attach="fog" args={['#02050a', 160, 330]} />

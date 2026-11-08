@@ -39,7 +39,7 @@ If the phone can't connect, allow incoming connections for Node/Python in the ma
 ```
 NEMOTRON_API_KEY=nvapi-...
 NEMOTRON_BASE_URL=https://integrate.api.nvidia.com/v1
-NEMOTRON_MODEL=nvidia/llama-3.3-nemotron-super-49b-v1   # any tool-calling Nemotron model
+NEMOTRON_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b   # any tool-calling Nemotron model
 AGENT_MODE=live        # live = Nemotron with automatic MOCK fallback · mock = deterministic only
 AGENT_TIMEOUT=20       # seconds before a live agent call falls back to MOCK
 ```
