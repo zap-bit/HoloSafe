@@ -71,6 +71,7 @@ class Run:
     def __init__(self, agent: str):
         self.agent = agent
         self.calls: list[dict] = []
+        self.results: list[tuple[str, dict]] = []  # raw results (not logged)
 
     def tool(self, name: str, **args) -> dict:
         if name == "propose_action":
@@ -78,7 +79,11 @@ class Run:
         res = tools.call(name, args)
         shown = {k: v for k, v in args.items() if k != "agent"}
         self.calls.append({"tool": name, "args": shown, "result_summary": _summ(res)})
+        self.results.append((name, res))
         return res
+
+    def last(self, name: str) -> dict | None:
+        return next((r for n, r in reversed(self.results) if n == name and r.get("ok")), None)
 
     def called(self, name: str) -> bool:
         return any(c["tool"] == name for c in self.calls)
@@ -222,10 +227,10 @@ async def report_agent(rep: dict) -> dict:
     out, run = await run_agent("Report Agent", f"[{rep.get('source')}] “{rep['text'][:90]}”", system=REPORT_SYS, user=user,
                                tool_names=["spatial_lookup", "create_incident", "update_edge_status"], mock=mock,
                                validate=lambda r: r.called("create_incident") or r.called("update_edge_status"))
-    if "edge" not in result:  # live path: recover what the model did
-        for c in run.calls:
-            if c["tool"] == "update_edge_status" and "✓" in c["result_summary"]:
-                result["edge"] = {"ok": True}
+    # live path: recover what the model did from the raw tool results
+    result.setdefault("incident", run.last("create_incident") or {})
+    if run.last("update_edge_status"):
+        result.setdefault("edge", run.last("update_edge_status"))
     return result
 
 

@@ -239,6 +239,7 @@ def rank_incidents() -> dict:
                              "isolation_weight": 30, "vulnerability_weight": 20, "time_weight": 15,
                              "accessibility_weight": 15, "confidence_floor": 0.55, "isolation_radius": 12}
     ranked = []
+    db.ex("UPDATE incidents SET rank=NULL, score=NULL WHERE severity='resolved'")
     for inc in db.q("SELECT * FROM incidents WHERE severity!='resolved'"):
         node = _node(inc["node_id"])
         person = db.q1("SELECT * FROM people WHERE id=?", (inc["person_id"],)) if inc["person_id"] else None
