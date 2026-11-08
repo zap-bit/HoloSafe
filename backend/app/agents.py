@@ -107,18 +107,24 @@ def _clean(text: str | None) -> str:
     return t[:600] or "(no summary)"
 
 
-async def _llm_loop(run: Run, system: str, user: str, tool_names: list[str], max_steps: int = 6) -> str:
+async def _llm_loop(run: Run, system: str, user: str, tool_names: list[str], max_steps: int = 6,
+                    max_tokens: int = 900, raw: bool = False) -> str:
     c = _cfg()
     sys_prompt = ("detailed thinking off\n" if "nemotron" in c["model"].lower() else "") + system
     messages: list[dict] = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": user}]
     spec = tools.openai_tools(tool_names) if tool_names else None
     for _ in range(max_steps):
-        kw = dict(model=c["model"], messages=messages, temperature=0.2, max_tokens=900)
+        kw = dict(model=c["model"], messages=messages, temperature=0.2, max_tokens=max_tokens)
         if spec:
             kw.update(tools=spec, tool_choice="auto")
+        if re.search(r"nemotron-3", c["model"].lower()):
+            # Nemotron 3.x toggles reasoning via the chat template; keep it off so agent steps stay fast
+            kw["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
         resp = await client().chat.completions.create(**kw)
         msg = resp.choices[0].message
         if not msg.tool_calls:
+            if raw:  # structured output (JSON): strip reasoning tags only, never truncate
+                return re.sub(r"<think>.*?</think>", "", msg.content or "", flags=re.S).strip()
             return _clean(msg.content)
         messages.append({"role": "assistant", "content": msg.content or "",
                          "tool_calls": [{"id": tc.id, "type": "function",
@@ -535,7 +541,8 @@ async def simulation_agent(trigger: str) -> dict:
     if mode == "live" and fcs:
         try:
             run.calls.append({"tool": "nemotron.reason", "args": {"forecasts": len(fcs)}, "result_summary": "annotating…"})
-            text = await asyncio.wait_for(_llm_loop(run, SIM_SYS, json.dumps({"hazard": cfg["name"], "forecasts": fcs}), []),
+            text = await asyncio.wait_for(_llm_loop(run, SIM_SYS, json.dumps({"hazard": cfg["name"], "forecasts": fcs}), [],
+                                                    max_tokens=4000, raw=True),
                                           timeout=_cfg()["timeout"])
             data = _parse_json(text)
             for a in data.get("annotations", []):
