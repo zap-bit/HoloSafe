@@ -113,8 +113,11 @@ export default function ReportPage({ embedded = false, device }: { embedded?: bo
             {outbox.slice(0, 5).map((r) => {
               const server = snap?.reports.find((x) => x.id === r.server_id)
               const inc = server?.incident_id ? snap?.incidents.find((i) => i.id === server.incident_id) : null
-              const st = r.status === 'queued' ? 'QUEUED' : server?.status === 'processing' ? 'AGENTS PROCESSING' : inc ? `INCIDENT · ${inc.severity}` : 'RECEIVED'
-              const col = r.status === 'queued' ? '#ffb020' : inc ? SEVERITY[inc.severity] : '#00ffa3'
+              const st = r.status === 'queued' ? 'QUEUED' : r.status === 'sending' ? 'SENDING…'
+                : !server ? 'CLEARED · RESET' : server.status === 'processing' ? 'AGENTS PROCESSING'
+                : server.status === 'all_clear' ? 'NOTED · ALL-CLEAR' : inc ? `INCIDENT · ${inc.severity}` : 'RECEIVED'
+              const col = r.status === 'queued' ? '#ffb020' : !server && r.status === 'sent' ? '#5b6b80'
+                : server?.status === 'all_clear' ? '#00ffa3' : inc ? SEVERITY[inc.severity] : '#19e6ff'
               return (
                 <div key={r.local_id} className="flex items-center gap-2 text-[11px]">
                   <span className="chip shrink-0" style={{ color: col }}>{st}</span>

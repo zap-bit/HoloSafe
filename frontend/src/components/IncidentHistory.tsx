@@ -22,7 +22,7 @@ export default function IncidentHistory() {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-white/80">“{r.text}”</div>
                 <div className="truncate font-mono text-[10px] text-dim">
-                  {r.device} · {placeOf(snap, r.node_id)} · {ago(r.created_at)} · <span style={{ color: col }}>{r.status === 'processing' ? 'AGENTS…' : inc ? `${inc.kind} ${inc.severity}` : r.status}</span>
+                  {r.device} · {placeOf(snap, r.node_id)} · {ago(r.created_at)} · <span style={{ color: col }}>{r.status === 'processing' ? 'AGENTS…' : r.status === 'all_clear' ? 'all-clear · no incident' : inc ? `${inc.kind} ${inc.severity}` : r.status}</span>
                 </div>
               </div>
             </div>

@@ -113,7 +113,12 @@ export function useOutbox(dev: string): OutItem[] {
   useEffect(() => {
     devices.add(dev)
     mesh()
-    if (!useOB.getState().loaded[dev]) get<OutItem[]>(key(dev)).then((v) => useOB.getState().put(dev, v ?? [])).catch(() => useOB.getState().put(dev, []))
+    if (!useOB.getState().loaded[dev]) get<OutItem[]>(key(dev)).then((v) => {
+      // a send interrupted by a reload never got its answer: re-queue it (server dedupes by id)
+      const items = (v ?? []).map((x) => (x.status === 'sending' ? { ...x, status: 'queued' as const } : x))
+      useOB.getState().put(dev, items)
+      if (items.some((x) => x.status === 'queued')) setTimeout(flushAll, 800)
+    }).catch(() => useOB.getState().put(dev, []))
     return () => { devices.delete(dev) }
   }, [dev])
   return items ?? []

@@ -170,14 +170,33 @@ async def run_agent(agent: str, input_summary: str, *, system: str, user: str, t
 
 
 # ================================================================ 1. REPORT AGENT
-CRIT = ("pinned", "can't move", "cannot move", "unconscious", "no movement", "not breathing", "crushed", "fall alert", "bleeding heavily")
+CRIT = ("pinned", "can't move", "cannot move", "unconscious", "no movement", "not breathing", "crushed", "fall alert", "bleeding heavily",
+        "bleeding profusely", "bleeding out", "heavy bleeding", "severe bleeding", "dying", "can't breathe", "cant breathe",
+        "cannot breathe", "unresponsive", "not responding", "heart attack", "chest pain", "losing consciousness", "passing out")
+# Deterministic safety rules applied AFTER the model (live or mock): life-threat language is never down-graded,
+# and explicit all-clear messages never become incidents.
+ALL_CLEAR = ("all good", "all clear", "i'm fine", "im fine", "i am fine", "i'm ok", "im ok", "i am ok", "we're ok", "we are ok",
+             "we're fine", "we are fine", "false alarm", "never mind", "nevermind", "no fire", "no smoke", "no gas",
+             "everything is fine", "i'm safe", "im safe", "i am safe", "we are safe", "we're safe", "no danger")
+NOT_CLEAR = ("trapped", "stuck", "bleed", "hurt", "injur", "help", "pinned", "dying", "blocked", "debris", "can't", "cant",
+             "cannot", "smell", "pain", "fall", "but ")
+
+
+def is_all_clear(text: str) -> bool:
+    t = text.lower().replace("’", "'")
+    return any(w in t for w in ALL_CLEAR) and not any(w in t for w in NOT_CLEAR) and not any(w in t for w in CRIT)
+
+
+def life_threat(text: str) -> str | None:
+    t = text.lower().replace("’", "'")
+    return next((w for w in CRIT if w in t), None)
 URG = ("trapped", "stuck", "locked inside", "won't open", "bleeding", "gas", "fire", "smoke", "injured", "hurt", "broken leg", "near miss")
 BLOCK = ("blocked", "debris", "impassable", "can't get through", "cannot get through", "caved", "rubble")
 HAZ = ("gas", "fire", "smoke", "leak", "traffic lights", "signals", "sparks", "flood", "power", "generator", "sos only", "can't get through to 911")
 
 
 def classify(text: str, hint: str | None) -> tuple[str, str]:
-    t = text.lower()
+    t = text.lower().replace("’", "'")
     comms = any(w in t for w in ("911", "sos only", "no signal", "no service"))
     if hint == "blocked_route" or (any(w in t for w in BLOCK) and not comms):
         kind = "blocked_route"
@@ -202,7 +221,8 @@ Ingest one raw report. Steps (use tools, never guess ids):
 1. Call spatial_lookup with the device node_id AND the report text, to resolve the exact location (e.g. 'room 305').
 2. If the report says a route/stair/corridor is blocked: call update_edge_status(status='reported_blocked', node_id=<resolved node>), then create_incident(kind='blocked_route', severity='requested').
    Otherwise call create_incident with the resolved node_id, a kind (distress|trapped|medical|hazard), and severity:
-   critical = life threat now (pinned, unconscious, no movement); urgent = trapped/bleeding/gas/fire; requested = minor/info.
+   critical = life threat now (pinned, unconscious, no movement, heavy/profuse bleeding, "dying", can't breathe);
+   urgent = trapped/minor bleeding/gas/fire; requested = minor/info. When in doubt between two levels, pick the HIGHER one.
    Set confidence 0-1 from source reliability and specificity. Pass person_id if given.
 3. Reply with ONE short sentence: classification, location, confidence. No markdown."""
 
@@ -214,6 +234,13 @@ async def report_agent(rep: dict) -> dict:
     if len(rep["text"].split()) < 5:
         base_conf -= 0.1
     result: dict = {}
+    if is_all_clear(rep["text"]):
+        # status update, not an emergency: log it against the location, create nothing
+        run = Run("Report Agent")
+        loc = run.tool("spatial_lookup", node_id=rep["node_id"], text=rep["text"])
+        _log("Report Agent", f"[{rep.get('source')}] “{rep['text'][:90]}”", run,
+             f"ALL-CLEAR from {loc.get('label', rep['node_id'])}: noted as a status update, no incident created.", "system")
+        return {"all_clear": True}
 
     def mock(run: Run) -> str:
         loc = run.tool("spatial_lookup", node_id=rep["node_id"], text=rep["text"])
@@ -238,6 +265,14 @@ async def report_agent(rep: dict) -> dict:
     result.setdefault("incident", run.last("create_incident") or {})
     if run.last("update_edge_status"):
         result.setdefault("edge", run.last("update_edge_status"))
+    inc = result["incident"]
+    hit = life_threat(rep["text"])
+    if hit and inc.get("incident_id") and inc.get("severity") != "critical":
+        db.update("incidents", inc["incident_id"], severity="critical")
+        log_event("Report Agent", f"SAFETY FLOOR · {inc['incident_id']}",
+                  f"Life-threat language (“{hit}”) → severity raised {inc.get('severity')} → CRITICAL. "
+                  "Deterministic rule: a model may never rank this below critical.")
+        inc["severity"] = "critical"
     return result
 
 

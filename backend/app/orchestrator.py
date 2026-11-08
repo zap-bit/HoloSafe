@@ -104,6 +104,9 @@ async def _process_report(rep: dict, rid: str, epoch: int) -> None:
         _busy(True)
         try:
             res = await agents.report_agent(rep)
+            if res.get("all_clear"):
+                db.update("reports", rid, status="all_clear")
+                return
             inc = (res.get("incident") or {}).get("incident_id")
             db.update("reports", rid, status="processed", incident_id=inc)
             trig = f"new report {rid}"
