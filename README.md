@@ -3,6 +3,8 @@
 **See. Understand. Evacuate. Coordinate.**
 
 AI-powered, infrastructure-independent emergency coordination with a holographic 3D command center.
+
+HoloSafe uses interactive 3D holographic environments, leveraging AI agents and mesh networks to track occupants, detect hazards, and coordinate real-time evacuation and rescue operations.
 Hackathon prototype for HackUTD, Nemotron track. Five NVIDIA Nemotron tool-calling agents coordinate evacuation, rescue and
 fallout forecasting over one live world model. That model is rendered on a laptop and as a Pepper's Ghost hologram.
 
