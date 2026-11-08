@@ -7,3 +7,8 @@ __pycache__/
 backend/data/
 .DS_Store
 .claude/settings.local.json
+
+# source art / design exports (processed copies live in frontend/public)
+0 · Opening animation-html/
+favicon.jpeg
+background.jpeg
