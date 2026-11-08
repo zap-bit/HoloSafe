@@ -27,9 +27,8 @@ def reset() -> None:
     _epoch += 1
     for t in list(_tasks):
         t.cancel()
-    offline = db.get_meta("offline", False)
     load_seed(scenario.hazard_summaries())
-    db.set_meta("offline", offline)
+    db.set_meta("offline", False)  # Reset fully restores: back online
     agents.refresh_mode_badge()
     state.broadcast()
 

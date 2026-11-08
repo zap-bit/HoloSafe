@@ -197,5 +197,6 @@ def load_seed(hazards: list | None = None) -> None:
 
 
 if __name__ == "__main__":
-    load_seed()
+    from app import scenario
+    load_seed(scenario.hazard_summaries())
     print("seeded:", {t: db.q1(f"SELECT COUNT(*) n FROM {t}")["n"] for t in ("nodes", "edges", "people", "infra")})

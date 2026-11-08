@@ -6,6 +6,8 @@ import TriageQueue from '../components/TriageQueue'
 import Approvals from '../components/Approvals'
 import AgentLog from '../components/AgentLog'
 import IncidentHistory from '../components/IncidentHistory'
+import Splash from '../components/Splash'
+import Demo from '../components/Demo'
 import { LinkBanner, MeshButton, OfflineToggle, SyncOverlay } from '../components/Offline'
 
 export default function CommandCenter() {
@@ -14,6 +16,7 @@ export default function CommandCenter() {
     <div className="scanlines vignette flex h-full flex-col overflow-hidden">
       <div className="sweep" />
       <Header>
+        <Demo />
         <ScenarioControls />
         <OfflineToggle />
         <MeshButton />
@@ -24,6 +27,7 @@ export default function CommandCenter() {
         <aside className="z-10 flex w-[390px] shrink-0 flex-col gap-2 p-2"><Approvals /><AgentLog /></aside>
       </main>
       <SyncOverlay />
+      <Splash />
       {!snap && <div className="absolute inset-0 grid place-items-center font-mono text-cyan/50">ESTABLISHING LINK…</div>}
     </div>
   )
