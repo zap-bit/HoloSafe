@@ -10,7 +10,7 @@
   "shelters_unverified": false,
   "effects": {
     "edges": [
-      { "a": "B4-F1-C2", "b": "B4-E1", "status": "verified_blocked", "source": "beacon", "confidence": 0.9, "note": "access-control maglocks failed closed" },
+      { "a": "B4-F1-C1", "b": "B4-E1", "status": "verified_blocked", "source": "beacon", "confidence": 0.9, "note": "access-control maglocks failed closed" },
       { "a": "ST-EC-M", "b": "ST-E-M", "status": "unknown", "source": "third_party", "confidence": 0.4, "note": "signals dark — intersection uncontrolled" },
       { "a": "ST-C-M", "b": "ST-EC-M", "status": "unknown", "source": "third_party", "confidence": 0.4, "note": "signals dark — intersection uncontrolled" }
     ],

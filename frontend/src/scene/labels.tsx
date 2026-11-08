@@ -19,7 +19,7 @@ export function sceneLabels(snap: Snapshot | null): Label[] {
   }
   for (const n of snap.nodes.filter((n) => n.kind === 'safe_zone')) {
     const res = snap.resources.find((r) => r.node_id === n.id && r.kind === 'shelter')
-    const ok = !snap.scenario || res?.status === 'verified'
+    const ok = !snap.scenario || res?.status !== 'unverified'
     out.push({ id: 's' + n.id, pos: [n.x, 13, n.z], text: '◎ ' + n.label.toUpperCase(), sub: ok ? 'SAFE ZONE' : 'UNVERIFIED', color: ok ? '#3dff8f' : '#ffe14d' })
   }
   for (const r of snap.responders) {

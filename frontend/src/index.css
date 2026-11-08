@@ -18,6 +18,7 @@
 html, body, #root { height: 100%; }
 body { margin: 0; background: var(--color-void); color: #cfe9f5; font-family: var(--font-ui); }
 
+@layer components {
 /* ---------- cyberpunk primitives ---------- */
 .scanlines::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60;
@@ -60,6 +61,8 @@ body { margin: 0; background: var(--color-void); color: #cfe9f5; font-family: va
 .btn-magenta:hover:not(:disabled) { background: rgba(255,61,240,.25); box-shadow: 0 0 16px rgba(255,61,240,.55); }
 .glow-text { text-shadow: 0 0 10px currentColor; }
 .scroll-thin::-webkit-scrollbar { width: 4px; } .scroll-thin::-webkit-scrollbar-thumb { background: rgba(25,230,255,.3); }
+
+}
 
 @keyframes flicker { 0%,100% { opacity: 1 } 92% { opacity: 1 } 93% { opacity: .55 } 94% { opacity: 1 } 97% { opacity: .8 } }
 .flicker { animation: flicker 6s infinite; }

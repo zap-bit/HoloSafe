@@ -172,7 +172,8 @@ HAZ = ("gas", "fire", "smoke", "leak", "traffic lights", "signals", "sparks", "f
 
 def classify(text: str, hint: str | None) -> tuple[str, str]:
     t = text.lower()
-    if hint == "blocked_route" or any(w in t for w in BLOCK):
+    comms = any(w in t for w in ("911", "sos only", "no signal", "no service"))
+    if hint == "blocked_route" or (any(w in t for w in BLOCK) and not comms):
         kind = "blocked_route"
     elif hint == "hazard" or (any(w in t for w in HAZ) and not any(w in t for w in ("pinned", "locked inside", "trapped"))):
         kind = "hazard"
@@ -357,7 +358,7 @@ async def resource_agent(trigger: str) -> dict:
                 continue
             flags = []
             if rt.get("breach_required"):
-                flags.append("breach required at final door")
+                flags.append("forced entry required (verified blockage on route)")
             if rt.get("uses_unknown"):
                 flags.append("passes UNVERIFIED segment — proceed with caution")
             run.tool("propose_action", action="dispatch_responder",
@@ -471,3 +472,128 @@ async def comms_agent(trigger: str, initial: bool = False) -> dict:
     out, _ = await run_agent("Comms Agent", trigger, system=COMMS_SYS, user=user(), tool_names=["notify"], mock=mock,
                              pre=lambda r: r.calls.extend(tmp.calls), validate=lambda r: r.called("notify"))
     return {"summary": out, "rerouted": len(rerouted)}
+
+
+# ================================================================ 5. SIMULATION AGENT
+SIM_SYS = """You are the HoloSafe SIMULATION AGENT. You receive forecasts produced by the deterministic cascade_forecast tool.
+Do NOT add, remove or change forecasts. For EACH forecast id write: a plain-language explanation (<=25 words, for an incident
+commander), one concrete precaution (imperative, <=20 words) and deadline_hours (a number: when the precaution must be done,
+before the forecast horizon). Output valid JSON only. No explanation. No markdown.
+Schema: {"annotations":[{"id":"...","explanation":"...","precaution":"...","deadline_hours":1.5}]}"""
+
+
+def _target_name(f: dict) -> str:
+    if f["target_kind"] == "infra":
+        i = db.q1("SELECT name FROM infra WHERE id=?", (f["target_id"],))
+        return i["name"] if i else f["target_id"]
+    if f["target_kind"] == "building":
+        b = db.q1("SELECT name FROM buildings WHERE id=?", (f["target_id"],))
+        return b["name"] if b else f["target_id"]
+    if f["target_kind"] == "node":
+        return tools.place(f["target_id"])
+    return "epicentre zone"
+
+
+def _mock_annotation(f: dict, cfg: dict, eta: float | None) -> dict:
+    tpl = (cfg.get("precautions") or {}).get(f["kind"], {})
+    vec = (cfg.get("attack_vector") or {}).get("network", "control")
+    name = _target_name(f)
+    dl = tpl.get("deadline_h")
+    if dl is None:
+        dl = round(max(0.5, (eta if eta is not None else f["horizon_hours"]) * 0.75), 1)
+    pct = f"{f['confidence']:.0%}"
+    expl = {
+        "aftershock": f"{pct} chance of a damaging aftershock near the epicentre within {f['horizon_hours']:g}h; risk falls over time.",
+        "weakened_building": f"{name} took heavy shaking; {pct} chance of further structural failure if an aftershock hits.",
+        "fire": f"Leaking gas at Main St can ignite; fire could reach {name} by +{f['horizon_hours']:g}h ({pct}).",
+        "power_loss": f"{name} goes dark around T+{eta if eta is not None else f['horizon_hours']:g}h when its backup power runs out ({pct}).",
+        "comms_loss": f"{name} battery backup ends ~T+{eta if eta is not None else f['horizon_hours']:g}h; phones in its cell lose service ({pct}).",
+        "water_loss": f"{name} stops pumping without grid power; water pressure drops for hospital and hydrants ({pct}).",
+        "traffic_loss": f"{name} go dark; uncontrolled intersections slow ambulances ({pct}).",
+        "compromise": f"{name} shares the attacked system; attackers can likely move to it next ({pct}).",
+    }.get(f["kind"], f["reason"])
+    return {"explanation": expl, "precaution": tpl.get("text", "Monitor.").format(target=name, vector=vec), "deadline_hours": dl}
+
+
+def _parse_json(text: str) -> dict:
+    t = re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.M).strip()
+    m = re.search(r"\{.*\}", t, flags=re.S)
+    return json.loads(m.group(0) if m else t)
+
+
+async def simulation_agent(trigger: str) -> dict:
+    cfg = scenario.current_cfg()
+    if not cfg:
+        return {}
+    run = Run("Simulation Agent")
+    res = run.tool("cascade_forecast", hazard=cfg["id"], horizons=[1, 6, 24])
+    fcs = [f for f in res.get("forecasts", []) if f["status"] == "predicted"]
+    eta = {f["id"]: f.get("eta_h") for f in res.get("forecasts", [])}
+    rows = {f["id"]: f for f in db.q("SELECT * FROM forecasts WHERE status='predicted'")}
+    ann: dict[str, dict] = {}
+    mode, why = configured_mode()
+    if mode == "live" and fcs:
+        try:
+            run.calls.append({"tool": "nemotron.reason", "args": {"forecasts": len(fcs)}, "result_summary": "annotating…"})
+            text = await asyncio.wait_for(_llm_loop(run, SIM_SYS, json.dumps({"hazard": cfg["name"], "forecasts": fcs}), []),
+                                          timeout=_cfg()["timeout"])
+            data = _parse_json(text)
+            for a in data.get("annotations", []):
+                if a.get("id") in rows and a.get("precaution"):
+                    ann[a["id"]] = {"explanation": str(a.get("explanation", ""))[:200], "precaution": str(a["precaution"])[:160],
+                                    "deadline_hours": float(a.get("deadline_hours") or rows[a["id"]]["horizon_hours"])}
+            run.calls[-1]["result_summary"] = f"✓ {len(ann)}/{len(fcs)} forecasts annotated"
+            db.set_meta("agent_mode", {"mode": "live", "reason": _cfg()["model"]})
+        except Exception as e:  # noqa: BLE001
+            db.set_meta("agent_mode", {"mode": "mock", "reason": f"fallback: {type(e).__name__}"})
+            run.calls.append({"tool": "—", "args": {}, "result_summary": f"⚠ live call failed ({type(e).__name__}) → MOCK"})
+            mode = "mock"
+    else:
+        mode = "mock"
+    for fid, row in rows.items():
+        a = ann.get(fid) or _mock_annotation(row, cfg, eta.get(fid))
+        if fid not in ann and mode == "live":
+            mode = "live+mock"
+        db.update("forecasts", fid, explanation=a["explanation"], precaution=a["precaution"], deadline_hours=a["deadline_hours"])
+
+    # operational precautions → human approval (grouped so one decision covers a whole chain)
+    groups: dict[tuple, dict] = {}
+    for fid, row in rows.items():
+        tpl = (cfg.get("precautions") or {}).get(row["kind"], {})
+        if not tpl.get("operational"):
+            continue
+        act = tpl["action"]
+        if tpl.get("averts_kind"):
+            key = (act, row["kind"])
+        elif act == "restrict_entry":
+            key = (act, row["target_id"])
+        else:
+            key = (act, row["target_id"])
+        g = groups.setdefault(key, {"action": act, "rows": [], "target": row})
+        g["rows"].append(row)
+    for (act, _), g in groups.items():
+        tgt = g["target"]
+        ids = [r["id"] for r in g["rows"]]
+        if act == "isolate_network":
+            ids += [f for f, r in rows.items() if tgt["target_id"] in json.loads(r["chain_json"] or "[]") and f not in ids]
+        if act == "restrict_entry":
+            ids = []  # restricting entry protects people; it doesn't stop the building weakening
+        first = min(g["rows"], key=lambda r: r["horizon_hours"])
+        name = _target_name(tgt)
+        a = ann.get(first["id"]) or _mock_annotation(first, cfg, eta.get(first["id"]))
+        title = {"shut_gas_valve": "Shut gas main valve GAS-1 — prevents fire spread",
+                 "fuel_resupply": f"Fuel resupply → {name} (before T+{a['deadline_hours']:g}h)",
+                 "isolate_network": f"Isolate {name} from the attacked network",
+                 "restrict_entry": f"Restrict re-entry: {name}"}.get(act, a["precaution"])
+        payload = {"forecast_ids": sorted(set(ids))}
+        if tgt["target_kind"] == "infra":
+            payload["infra_id"] = tgt["target_id"]
+        if tgt["target_kind"] == "building":
+            payload["building_id"] = tgt["target_id"]
+        run.tool("propose_action", action=act, title=title, payload=payload,
+                 rationale=f"{a['precaution']} · deadline T+{a['deadline_hours']:g}h · {len(ids)} forecast(s) averted if done.")
+    by_h = {h: sum(1 for r in rows.values() if r["horizon_hours"] == h) for h in (1, 6, 24)}
+    out = (f"{len(rows)} predicted effects (+1h: {by_h[1]}, +6h: {by_h[6]}, +24h: {by_h[24]}); "
+           f"{len(groups)} operational precaution(s) sent for approval. Predicted ≠ confirmed: shown as violet volumes.")
+    _log("Simulation Agent", trigger, run, out, "live" if mode.startswith("live") else "mock")
+    return {"summary": out}

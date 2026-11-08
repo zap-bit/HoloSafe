@@ -17,8 +17,8 @@ def _graph(mode: str, mobility: str, breach_target: str | None = None) -> nx.Gra
         st, w = e["status"], e["length"]
         breach = False
         if st == "verified_blocked":
-            # responders can breach the last obstacle in front of a trapped person
-            if mode == "responder" and breach_target in (e["a"], e["b"]):
+            # responders can force/breach a verified obstacle (locked door, light debris) at a high cost
+            if mode == "responder":
                 w *= 10
                 breach = True
             else:

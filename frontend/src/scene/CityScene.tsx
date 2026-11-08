@@ -214,7 +214,7 @@ function SafeZones({ snap, nodes, holo }: { snap: Snapshot; nodes: Map<string, G
     <group>
       {snap.nodes.filter((n) => n.kind === 'safe_zone').map((n) => {
         const res = snap.resources.find((r) => r.node_id === n.id && r.kind === 'shelter')
-        const verified = !snap.scenario || res?.status === 'verified'
+        const verified = !snap.scenario || res?.status !== 'unverified'
         const color = verified ? '#3dff8f' : '#ffe14d'
         return (
           <group key={n.id} position={[n.x, 0.05, n.z]}>
@@ -433,7 +433,14 @@ function Forecasts({ snap, nodes, holo }: { snap: Snapshot; nodes: Map<string, G
   const visible = snap.forecasts.filter((f) => f.horizon_hours <= H && f.status !== 'averted')
   // aftershock zones: show only the latest horizon ≤ H (they decay)
   const aft = visible.filter((f) => f.kind === 'aftershock').sort((a, b) => b.horizon_hours - a.horizon_hours)[0]
-  const rest = visible.filter((f) => f.kind !== 'aftershock' && f.kind !== 'weakened_building')
+  // one volume per (kind, target): the latest horizon ≤ H
+  const latest = new Map<string, Forecast>()
+  for (const f of visible) {
+    if (f.kind === 'aftershock' || f.kind === 'weakened_building') continue
+    const k = f.kind + f.target_id
+    if (!latest.has(k) || latest.get(k)!.horizon_hours < f.horizon_hours) latest.set(k, f)
+  }
+  const rest = [...latest.values()]
   return (
     <group>
       {aft && <PredictedVolume f={aft} holo={holo} />}

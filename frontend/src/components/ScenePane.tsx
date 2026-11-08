@@ -6,6 +6,7 @@ import { useStore } from '../lib/store'
 import { api } from '../lib/api'
 import { LabelOverlay, LabelProjector, sceneLabels } from '../scene/labels'
 import { useMemo } from 'react'
+import { ForecastPanel, TimeSlider } from './Forecasts'
 
 export function setView(v: { horizon?: number; focus_building?: string | null; focus_floor?: number | null }) {
   api.post('/api/view', v).catch(() => {})
@@ -29,6 +30,8 @@ export default function ScenePane() {
       </Canvas>
       <LabelOverlay labels={labels} />
       <FocusBar />
+      <ForecastPanel />
+      <TimeSlider />
     </div>
   )
 }
