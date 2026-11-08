@@ -351,20 +351,23 @@ async def situation_agent(trigger: str) -> dict:
 
 
 # ================================================================ 3. RESOURCE AGENT (Pathway B)
-RESOURCE_SYS = """You are the HoloSafe RESOURCE AGENT (Pathway B: rescue). Match available responders to the highest-ranked
-trapped/injured/critical incidents. For each match: call route(mode='responder', subject_id=<responder id>, to_kind='node',
+RESOURCE_SYS = """You are the HoloSafe RESOURCE AGENT (Pathway B: rescue). Match available responders to open incidents in the order
+given: critical first, then urgent, then requested (welfare checks, hazard checks) once higher tiers are covered. For each match: call route(mode='responder', subject_id=<responder id>, to_kind='node',
 to_node=<incident node>) and then propose_action(action='dispatch_responder', title, payload={responder_id, incident_id, route_id},
-rationale) — dispatches need human approval. Prefer kind matches: search_rescue→trapped, ems→medical/assisted_evac, fire_rescue→hazard.
+rationale) — dispatches need human approval. Prefer kind matches: search_rescue→trapped, ems→medical/assisted_evac/needs_assessment, fire_rescue→hazard.
 Use each responder at most once. Reply with one sentence summarising proposals. No markdown."""
 
-KIND_PREF = {"trapped": "search_rescue", "medical": "ems", "distress": "ems", "assisted_evac": "ems", "hazard": "fire_rescue"}
+KIND_PREF = {"trapped": "search_rescue", "medical": "ems", "distress": "ems", "assisted_evac": "ems", "needs_assessment": "ems", "hazard": "fire_rescue"}
 
 
 def _rescue_candidates() -> list[dict]:
     pending_inc = {json.loads(a["payload_json"]).get("incident_id") for a in db.q(
         "SELECT payload_json FROM approvals WHERE action='dispatch_responder' AND status IN ('pending','approved')")}
-    return [i for i in db.q("SELECT * FROM incidents WHERE severity IN ('critical','urgent') AND acknowledged=0 "
-                            "AND kind IN ('trapped','medical','distress','hazard','assisted_evac') ORDER BY rank")
+    # Strict severity tiers: critical first, then urgent, then requested (welfare/hazard checks) once the higher
+    # tiers are covered. Within a tier, follow the triage rank. Blocked routes are handled by verify_blocked instead.
+    return [i for i in db.q("SELECT * FROM incidents WHERE severity IN ('critical','urgent','requested') AND acknowledged=0 "
+                            "AND kind IN ('trapped','medical','distress','hazard','assisted_evac','needs_assessment') "
+                            "ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END, rank")
             if i["id"] not in pending_inc]
 
 
@@ -409,7 +412,7 @@ async def resource_agent(trigger: str) -> dict:
             avail.remove(best)
             made.append(f"{best['name']}→#{inc['rank']}")
         if not made:
-            return "No new dispatches: " + ("all responders committed." if not avail else "no unassigned critical/urgent incidents.")
+            return "No new dispatches: " + ("all responders committed." if not avail else "no unassigned incidents.")
         return f"Proposed {len(made)} dispatch(es) for approval: " + ", ".join(made) + "."
 
     user = json.dumps({"incidents": [{"incident_id": i["id"], "rank": i["rank"], "kind": i["kind"], "severity": i["severity"],

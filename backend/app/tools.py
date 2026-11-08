@@ -40,7 +40,7 @@ def place(nid: str) -> str:
 def _people_near(node: dict, radius: float, exclude: str | None = None) -> list[dict]:
     out = []
     for p in db.q("SELECT p.*, n.x, n.y, n.z, n.building_id, n.floor FROM people p JOIN nodes n ON n.id=p.node_id"):
-        if p["id"] == exclude:
+        if p["id"] == exclude or p["status"] == "rescued":  # rescued people have left; they can't help or be helped here
             continue
         if node["building_id"] and (p["building_id"] != node["building_id"] or p["floor"] != node["floor"]):
             continue
@@ -264,8 +264,9 @@ def rank_incidents() -> dict:
                 T["vulnerability_weight"] * vul + T["time_weight"] * time_s + T["accessibility_weight"] * acc)
         score = round(base * (T["confidence_floor"] + (1 - T["confidence_floor"]) * inc["confidence"]), 1)
         reasons = [inc["severity"]]
-        if isolation == 1.0:
-            reasons.append(f"isolated (0 people within {T['isolation_radius']}m)")
+        n_near, R = len(others), T["isolation_radius"]
+        reasons.append(f"isolated (0 people within {R}m)" if n_near == 0
+                       else f"{n_near} {'person' if n_near == 1 else 'people'} within {R}m")
         if vul >= 0.7:
             reasons.append("vulnerable" if inc["kind"] != "needs_assessment" else "mobility unknown")
         if acc == 1.0:

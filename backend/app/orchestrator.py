@@ -136,6 +136,28 @@ async def decide(approval_id: str, approve: bool) -> dict:
     return {"ok": True, "result": msg}
 
 
+async def resolve_incident(incident_id: str, note: str = "") -> dict:
+    """Operator closes an incident by hand (welfare check done, hazard cleared, duplicate, false alarm...).
+    Any dispatch still awaiting approval for it is withdrawn."""
+    inc = db.q1("SELECT * FROM incidents WHERE id=?", (incident_id,))
+    if not inc or inc["severity"] == "resolved":
+        return {"ok": False, "reason": "not open"}
+    db.update("incidents", incident_id, severity="resolved", acknowledged=1)
+    withdrawn = 0
+    for a in db.q("SELECT * FROM approvals WHERE action='dispatch_responder' AND status='pending'"):
+        p = json.loads(a["payload_json"])
+        if p.get("incident_id") == incident_id:
+            db.update("approvals", a["id"], status="rejected")
+            if p.get("route_id"):
+                db.update("routes", p["route_id"], status="superseded")
+            withdrawn += 1
+    agents.log_event("Operator", f"RESOLVED · {inc['kind'].replace('_', ' ')} at {tools.place(inc['node_id'])}",
+                     (note or "Closed by operator.") + (f" Withdrew {withdrawn} pending dispatch(es)." if withdrawn else ""))
+    tools.rank_incidents()
+    state.broadcast()
+    return {"ok": True, "withdrawn": withdrawn}
+
+
 async def _execute(action: str, p: dict) -> str:
     if action == "dispatch_responder":
         r = db.q1("SELECT * FROM responders WHERE id=?", (p["responder_id"],))
@@ -156,8 +178,14 @@ async def _execute(action: str, p: dict) -> str:
         db.update("edges", e["id"], status="verified_blocked", status_source="responder", status_confidence=0.95,
                   status_updated=tools.now())
         await state.event("edge_pulse", {"edge_id": e["id"]})
+        # the blocked-route report(s) at either end of this edge are now handled: routing avoids the edge
+        closed = [i["id"] for i in db.q("SELECT id FROM incidents WHERE kind='blocked_route' AND severity!='resolved' AND node_id IN (?,?)", (e["a"], e["b"]))]
+        for iid in closed:
+            db.update("incidents", iid, severity="resolved")
+        if closed:
+            tools.rank_incidents()
         _spawn(_comms_followup(f"edge {e['id']} verified blocked"))
-        return f"{e['id']} now VERIFIED BLOCKED."
+        return f"{e['id']} now VERIFIED BLOCKED." + (f" Closed {len(closed)} blocked-route report(s)." if closed else "")
     if action == "declare_safe":
         db.update("resources", p["resource_id"], status="verified")
         return "Shelter verified safe."
@@ -171,6 +199,11 @@ async def _execute(action: str, p: dict) -> str:
     if action == "isolate_network" and p.get("infra_id"):
         db.update("infra", p["infra_id"], status="isolated")
     return f"Precaution in effect; {averted} forecast(s) marked averted."
+
+
+async def _resource_followup(trigger: str) -> None:
+    async with _lock:
+        await agents.resource_agent(trigger)
 
 
 async def _comms_followup(trigger: str) -> None:
@@ -199,3 +232,5 @@ async def _move_responder(rid: str, path: list[str], incident_id: str, route_id:
     tools.rank_incidents()
     db.update("responders", rid, status="available", assigned_incident_id=None)
     state.broadcast()
+    # unit is free again: propose its next job (next critical → urgent → requested incident)
+    await _resource_followup(f"{r['name']} available")

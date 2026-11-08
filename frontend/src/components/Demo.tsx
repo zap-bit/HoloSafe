@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useStore } from '../lib/store'
 import { api } from '../lib/api'
 import { submitReport } from '../lib/outbox'
@@ -48,7 +49,8 @@ export default function Demo() {
   return (
     <>
       <button className="btn btn-lime" onClick={() => setOpen((o) => !o)}>◈ Demo</button>
-      {open && (
+      {/* Portal to <body> so the header's backdrop-filter doesn't trap this fixed panel. */}
+      {open && createPortal(
         <div className="panel slidein fixed top-[68px] left-[366px] z-40 w-[340px] p-3">
           <div className="flex items-center justify-between">
             <span className="panel-title !text-lime">Demo · step {i + 1}/{STEPS.length}</span>
@@ -62,7 +64,8 @@ export default function Demo() {
             <button className="btn !py-1" disabled={i === 0} onClick={() => setI(i - 1)}>◂ Back</button>
             <button className="btn btn-lime !py-1" disabled={i === STEPS.length - 1} onClick={() => setI(i + 1)}>Next ▸</button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

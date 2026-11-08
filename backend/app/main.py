@@ -78,6 +78,11 @@ async def decide(aid: str, decision: str):
     return await orchestrator.decide(aid, decision == "approve")
 
 
+@app.post("/api/incidents/{iid}/resolve")
+async def resolve_incident(iid: str):
+    return await orchestrator.resolve_incident(iid)
+
+
 class OfflineIn(BaseModel):
     offline: bool
 

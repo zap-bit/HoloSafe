@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useStore } from '../lib/store'
 import { api } from '../lib/api'
 import { useOutbox } from '../lib/outbox'
@@ -50,7 +51,11 @@ export function MeshButton() {
   return (
     <>
       <button className="btn" onClick={() => setOpen((o) => !o)}>⌬ Device B</button>
-      {open && <div className="pointer-events-none fixed inset-x-0 top-14 bottom-0 z-30"><div className="relative h-full"><MeshDevice onClose={() => setOpen(false)} /></div></div>}
+      {/* Portal to <body>: the header uses backdrop-filter, which would otherwise trap this fixed overlay inside the header box. */}
+      {open && createPortal(
+        <div className="pointer-events-none fixed inset-x-0 top-14 bottom-0 z-30"><div className="relative h-full"><MeshDevice onClose={() => setOpen(false)} /></div></div>,
+        document.body,
+      )}
     </>
   )
 }
